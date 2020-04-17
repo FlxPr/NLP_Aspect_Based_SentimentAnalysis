@@ -6,7 +6,7 @@ def read_data(data_file='data/traindata.csv'):
     lines = list(map(str.split, file.readlines()))
 
     polarity = [line[0] for line in lines]
-    polarity = list(map(lambda x: 1 if x == 'positive' else 0, polarity))
+    polarity = list(map(lambda x: 1 if x == 'positive' else (0 if x == 'neutral' else - 1), polarity))
 
     aspect = [line[1] for line in lines]
 
