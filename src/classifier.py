@@ -149,11 +149,11 @@ class Classifier:
                 # Add batch to GPU
                 batch = tuple(t.to(device) for t in batch)
                 # Unpack the inputs from our dataloader
-                b_input_ids, b_input_attention_mask, b_input_token_type_ids, b_labels = batch
+                b_input_ids, b_token_type_ids, b_attention_masks, b_labels = batch
                 # Clear out the gradients (by default they accumulate)
                 optimizer.zero_grad()
                 # Forward pass
-                loss = model(b_input_ids, token_type_ids = b_input_token_type_ids, attention_mask = b_input_attention_mask, labels=b_labels)
+                loss, logits = model(b_input_ids, token_type_ids = b_token_type_ids, attention_mask = b_attention_masks, labels=b_labels)
                 train_loss_set.append(loss.item())    
                 # Backward pass
                 loss.backward()
@@ -194,11 +194,13 @@ class Classifier:
             # Add batch to GPU 
             #batch = tuple(t.to(device) for t in batch)
             # Unpack the inputs from our dataloader
-            b_input_ids, b_input_attention_mask, b_input_token_type_ids, b_labels = batch
+            b_input_ids, b_token_type_ids, b_attention_masks, b_labels = batch
             # Telling the model not to compute or store gradients, saving memory and speeding up validation
             with torch.no_grad():
                 # Forward pass, calculate logit predictions
-                logits = model(b_input_ids, token_type_ids = b_input_token_type_ids, attention_mask = b_input_attention_mask).detach().numpy() 
+                (loss, logits) = model(b_input_ids, token_type_ids = b_token_type_ids, attention_mask = b_attention_masks, labels=b_labels) 
+  
+                logits = logits.detach().numpy() 
                 logits = np.argmax(logits, axis=1).flatten()
         
         preds = encoder.inverse_transform(logits)
@@ -220,10 +222,10 @@ class Classifier:
         Returns the list of predicted labels
         """
         
-        df = self.loadfile(trainfile)
+        df = self.loadfile(datafile)
         tokenizer = self.adjusted_tokenizer(df)
         
-        df = self.loadfile(datafile)
+        #df = self.loadfile(datafile)
         validation_dataloader, encoder = self.preprocessing(df, tokenizer, train = False)
         path = os.getcwd()
         model = self.load_model(path, tokenizer)
