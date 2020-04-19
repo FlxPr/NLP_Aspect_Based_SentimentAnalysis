@@ -91,7 +91,7 @@ class Classifier:
             dataloader = DataLoader(data, sampler=sampler, batch_size=self.batch_size)
         else: 
             sampler = SequentialSampler(data)
-            dataloader = DataLoader(data, sampler=sampler, batch_size=len(data))
+            dataloader = DataLoader(data, sampler=sampler, batch_size=self.batch_size)
         
         return dataloader, encoder
         
@@ -175,12 +175,13 @@ class Classifier:
         model.resize_token_embeddings(len(tokenizer))
         model.load_state_dict(torch.load('{}/model.pt'.format(path)))
         #model.cuda()
-        return model
-                            
+        return model             
     
     ## VALIDATION ##
     
     def bert_eval(self, model, validation_dataloader, encoder):
+        
+        prediction = []
         
         # GPUs
         #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -203,8 +204,10 @@ class Classifier:
                 logits = logits.detach().numpy() 
                 logits = np.argmax(logits, axis=1).flatten()
         
-        preds = encoder.inverse_transform(logits)
-        return preds   
+            preds = encoder.inverse_transform(logits)            
+            prediction += list(preds)
+            
+        return prediction   
 
     #############################################
     def train(self, trainfile):
